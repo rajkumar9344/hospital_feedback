@@ -1,0 +1,429 @@
+<?php
+// Include PHPMailer classes
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require './PHPMailer-master/src/Exception.php';
+require './PHPMailer-master/src/PHPMailer.php';
+require './PHPMailer-master/src/SMTP.php';
+
+// Database connection settings
+$host = 'localhost'; // or your host
+$db = 'patient_feedback';
+$user = 'root'; // Your database username
+$pass = 'root'; // Your database password
+
+// Create connection
+$conn = new mysqli($host, $user, $pass, $db);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Check if form is submitted
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+   // Fetch form data
+$patientName = $_POST['patientName'];
+$phoneNumber = $_POST['phoneNumber'];
+$op_number = $_POST['op_number'];
+$doctor = $_POST['doctor'];
+$service_quality = $_POST['service_quality'];
+$doctors_communication = $_POST['doctors_communication'];
+$overall_experience = $_POST['overall_experience'];
+$email = $_POST['email'];
+
+// Define doctor's name based on the value
+$doctor_name = '';
+if ($doctor == '1') {
+    $doctor_name = 'Doctor A';
+} else if ($doctor == '2') {
+    $doctor_name = 'Doctor B';
+}
+// Create the email content
+$mailBody = "
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { width: 80%; margin: auto; }
+        h1 { color: #008080; }
+        p { color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <h1>Patient Feedback</h1>
+        <p><strong>Patient Name:</strong> $patientName</p>
+        <p><strong>Phone Number:</strong> $phoneNumber</p>
+        <p><strong>Email:</strong> $email</p>
+        <p><strong>OP Number:</strong> $op_number</p>
+        <p><strong>Doctor:</strong> $doctor</p>
+        <h2>Ratings</h2>
+        <table>
+            <tr>
+                <th>Service Quality</th>
+                <td>$service_quality</td>
+            </tr>
+            <tr>
+                <th>Doctors Communication</th>
+                <td>$doctors_communication</td>
+            </tr>
+            <tr>
+                <th>Overall Experience</th>
+                <td>$overall_experience</td>
+            </tr>
+        </table>
+        <p>Thank you for your feedback!</p>
+    </div>
+</body>
+</html>
+";    // SQL query to insert data into the feedback table
+    // Prepare an SQL statement
+    $stmt = $conn->prepare("INSERT INTO feedback (patient_name, phone_number, op_number, doctor, service_quality, doctors_communication, overall_experience) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    
+    // Bind parameters to the SQL query
+    $stmt->bind_param("ssssiii", $patientName, $phoneNumber, $op_number, $doctor, $service_quality, $doctors_communication, $overall_experience);
+
+    if ($stmt->execute()) {
+        // Prepare email
+        $mail = new PHPMailer(true);
+        try {
+            //Server settings
+            $mail->isSMTP(); // Set mailer to use SMTP
+            $mail->Host = 'smtp.gmail.com'; // Specify your SMTP server
+            $mail->SMTPAuth = true; // Enable SMTP authentication
+            $mail->Username = 'rajkumarnkl2024@gmail.com'; // SMTP username
+            $mail->Password = 'dwjq gfox rdeu wcfp'; // SMTP password
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; // Enable TLS encryption
+            $mail->Port = 587; // TCP port to connect to
+
+            // Recipients
+            $mail->setFrom('rajkumarnkl2024@gmail.com', 'Hospital Feedback'); // Sender's email and name
+            $mail->addAddress($email, $patientName); // Add recipient (the patient)
+            // $mail->addReplyTo('rajkumarnkl2024@gmail.com', 'No Reply'); // Add a reply-to address
+
+            // Content
+            $mail->isHTML(true); // Set email format to HTML
+            $mail->Subject = 'Thank you for your Feedback!';
+            $mail->Body    = $mailBody;
+
+            // Send email
+            $mail->send();
+            echo "<script>alert('Feedback submitted successfully! A confirmation email has been sent.'); window.location.href='feedback_home.php';</script>";
+        } catch (Exception $e) {
+            echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+        }
+    } else {
+        echo "Error: " . $sql . "<br>" . $conn->error;
+    }
+}
+
+$conn->close();
+?>
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Feedback System</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+    .navbar-custom {
+        background-color: #f8f9fa;
+        /* Light background */
+        padding: 15px;
+    }
+
+    .navbar-custom h3 {
+        margin: 0;
+        font-weight: bold;
+    }
+
+    .navbar-custom img {
+        height: 50px;
+        /* Adjust logo size */
+    }
+
+    .content {
+        margin: 20px auto;
+        /* Center content on the page */
+        padding: 15px;
+        /* Padding for inner content */
+    }
+
+    /* Styles for rating */
+    .rating-container {
+        margin-bottom: 10px;
+        /* Space between rating sections */
+        padding: 10px;
+        border-radius: 0px;
+        background-color: #f8f9fa;
+        border: 1px solid blue;
+        /* Blue border */
+    }
+
+    .rating-scale {
+        display: flex;
+        /* justify-content: space-between;  */
+        flex-wrap: nowrap;
+        /* Prevent wrapping */
+        margin-bottom: 5px;
+    }
+
+    .rating-scale input {
+        display: none;
+        /* Hide radio buttons */
+    }
+
+    .rating-scale label {
+        flex: 1;
+        /* Allow labels to grow */
+        padding: 10px;
+        text-align: center;
+        background-color: #ccc;
+        color: white;
+        cursor: pointer;
+        margin: 0 0px;
+        /* Space between labels */
+        /* border-radius: 5px;  */
+    }
+
+    /* Color coding for ratings */
+    .rating-scale label[data-value="10"] {
+        background-color: #2e7d32;
+    }
+
+    .rating-scale label[data-value="9"] {
+        background-color: #388e3c;
+    }
+
+    .rating-scale label[data-value="8"] {
+        background-color: #43a047;
+    }
+
+    .rating-scale label[data-value="7"] {
+        background-color: #689f38;
+    }
+
+    .rating-scale label[data-value="6"] {
+        background-color: #afb42b;
+    }
+
+    .rating-scale label[data-value="5"] {
+        background-color: #fbc02d;
+    }
+
+    .rating-scale label[data-value="4"] {
+        background-color: #f57c00;
+    }
+
+    .rating-scale label[data-value="3"] {
+        background-color: #e64a19;
+    }
+
+    .rating-scale label[data-value="2"] {
+        background-color: #d32f2f;
+    }
+
+    .rating-scale label[data-value="1"] {
+        background-color: #c62828;
+    }
+
+    .rating-scale input:checked+label {
+        border: 2px solid black;
+        /* Highlight selected rating */
+    }
+
+    p {
+        font-size: 14px;
+        line-height: 22px;
+        padding: 0px;
+        margin: 0px;
+        color: #008080;
+    }
+    h1,h2,h3,h4,h5{
+        font-weight: normal;
+    padding: 0px;
+    margin: 0px;
+    color: #008080;
+    }
+    </style>
+</head>
+
+<body>
+    <!-- Header Section -->
+    <nav class="navbar navbar-custom">
+        <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
+            <h3 class="text-center text-md-left mb-0">Patient Feedback Collection</h3>
+            <img src="assets/images/4658943.png" alt="Logo" class="ml-0 ml-md-2 mt-2 mt-md-0">
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container content">
+        <div class="row justify-content-center mt-2">
+            <div class="col-12 text-center">
+                <h5>We would love to get your feedback. <br>
+                    Please share your feedback with us so that we can make your service experience even better next
+                    time.</h5>
+
+                <!-- Complaint Form -->
+                <form class="mt-4" action="feedback.php" method="POST">
+                    <div class="form-row">
+
+                        <div class="form-group col-sm-6">
+                            <input type="text" class="form-control" id="patientName" name="patientName"
+                                placeholder="Patient Name*" required>
+                        </div>
+                        <div class="form-group col-sm-6">
+                            <input type="tel" class="form-control" id="phoneNumber" name="phoneNumber"
+                                placeholder="Phone Number*" required>
+                        </div>
+
+                        <div class="form-group col-sm-3">
+                            <input type="tel" class="form-control" id="email" name="email"
+                                placeholder="Email*" required>
+                        </div>
+
+                        <div class="form-group col-sm-3">
+                            <input type="tel" class="form-control" id="op_number" name="op_number"
+                                placeholder="OP Number" required>
+                        </div>
+                        <div class="form-group col-sm-3">
+
+                            <select class="form-control" id="doctor" name="doctor">
+                                <option value=>Doctor</option>
+                                <option value="1">Doctor A</option>
+                                <option value="2">Doctor B</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-sm-12 text-color:#008080">
+                        <p>Please give your feedback on the website by clicking in the appropriate numbers and also type
+                            a few sentences, if you have got any feedback or complaints. Your feedback will make our
+                            customer service experience even better next time.</p>
+                    </div>
+
+                    <!-- Ratings Section -->
+
+                    <div class="rating-container mt-2 ">
+                        <h5 class="text-left">Service Quality Rating</h5>
+                        <div class="rating-scale">
+                            <input type="radio" id="service10" name="service_quality" value="10" required>
+                            <label for="service10" data-value="10">10</label>
+                            <input type="radio" id="service9" name="service_quality" value="9">
+                            <label for="service9" data-value="9">9</label>
+                            <input type="radio" id="service8" name="service_quality" value="8">
+                            <label for="service8" data-value="8">8</label>
+                            <input type="radio" id="service7" name="service_quality" value="7">
+                            <label for="service7" data-value="7">7</label>
+                            <input type="radio" id="service6" name="service_quality" value="6">
+                            <label for="service6" data-value="6">6</label>
+                            <input type="radio" id="service5" name="service_quality" value="5">
+                            <label for="service5" data-value="5">5</label>
+                            <input type="radio" id="service4" name="service_quality" value="4">
+                            <label for="service4" data-value="4">4</label>
+                            <input type="radio" id="service3" name="service_quality" value="3">
+                            <label for="service3" data-value="3">3</label>
+                            <input type="radio" id="service2" name="service_quality" value="2">
+                            <label for="service2" data-value="2">2</label>
+                            <input type="radio" id="service1" name="service_quality" value="1">
+                            <label for="service1" data-value="1">1</label>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2">
+                            <span class="text-success">Good</span>
+                            <span class="text-danger">Bad</span>
+                        </div>
+                    </div>
+                       <!-- Doctors Communication Rating Section -->
+    <div class="rating-container mt-2 ">
+        <h5 class="text-left">Doctors Communication Rating</h5>
+        <div class="rating-scale">
+            <input type="radio" id="communication10" name="doctors_communication" value="10" required>
+            <label for="communication10" data-value="10">10</label>
+            <input type="radio" id="communication9" name="doctors_communication" value="9">
+            <label for="communication9" data-value="9">9</label>
+            <input type="radio" id="communication8" name="doctors_communication" value="8">
+            <label for="communication8" data-value="8">8</label>
+            <input type="radio" id="communication7" name="doctors_communication" value="7">
+            <label for="communication7" data-value="7">7</label>
+            <input type="radio" id="communication6" name="doctors_communication" value="6">
+            <label for="communication6" data-value="6">6</label>
+            <input type="radio" id="communication5" name="doctors_communication" value="5">
+            <label for="communication5" data-value="5">5</label>
+            <input type="radio" id="communication4" name="doctors_communication" value="4">
+            <label for="communication4" data-value="4">4</label>
+            <input type="radio" id="communication3" name="doctors_communication" value="3">
+            <label for="communication3" data-value="3">3</label>
+            <input type="radio" id="communication2" name="doctors_communication" value="2">
+            <label for="communication2" data-value="2">2</label>
+            <input type="radio" id="communication1" name="doctors_communication" value="1">
+            <label for="communication1" data-value="1">1</label>
+        </div>
+        <div class="d-flex justify-content-between mt-2">
+            <span class="text-success">Good</span>
+            <span class="text-danger">Bad</span>
+        </div>
+    </div>
+
+    <!-- Overall Experience Rating Section -->
+    <div class="rating-container mt-2 ">
+        <h5 class="text-left">Overall Experience Rating</h5>
+        <div class="rating-scale">
+            <input type="radio" id="experience10" name="overall_experience" value="10" required>
+            <label for="experience10" data-value="10">10</label>
+            <input type="radio" id="experience9" name="overall_experience" value="9">
+            <label for="experience9" data-value="9">9</label>
+            <input type="radio" id="experience8" name="overall_experience" value="8">
+            <label for="experience8" data-value="8">8</label>
+            <input type="radio" id="experience7" name="overall_experience" value="7">
+            <label for="experience7" data-value="7">7</label>
+            <input type="radio" id="experience6" name="overall_experience" value="6">
+            <label for="experience6" data-value="6">6</label>
+            <input type="radio" id="experience5" name="overall_experience" value="5">
+            <label for="experience5" data-value="5">5</label>
+            <input type="radio" id="experience4" name="overall_experience" value="4">
+            <label for="experience4" data-value="4">4</label>
+            <input type="radio" id="experience3" name="overall_experience" value="3">
+            <label for="experience3" data-value="3">3</label>
+            <input type="radio" id="experience2" name="overall_experience" value="2">
+            <label for="experience2" data-value="2">2</label>
+            <input type="radio" id="experience1" name="overall_experience" value="1">
+            <label for="experience1" data-value="1">1</label>
+        </div>
+        <div class="d-flex justify-content-between mt-2">
+            <span class="text-success">Good</span>
+            <span class="text-danger">Bad</span>
+        </div>
+    </div>
+
+
+
+
+                    <button type="submit" class="btn btn-danger btn-lg btn-block">Submit Feedback</button>
+                </form>
+
+                <!-- Back Button at the bottom -->
+                <a href="feedback_home.php" class="btn btn-secondary mt-3">Back</a>
+                <!-- Adjust the href to your home page -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+
+</html>

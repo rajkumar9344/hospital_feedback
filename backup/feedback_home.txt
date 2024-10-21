@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback System</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        .navbar-custom {
+            background-color: #f8f9fa; /* Light background */
+            padding: 15px;
+        }
+        .navbar-custom h3 {
+            margin: 0;
+            font-weight: bold;
+        }
+        .navbar-custom img {
+            height: 50px; /* Adjust logo size */
+        }
+        .btn-gap {
+            margin-left: 10px; /* Gap between buttons */
+        }
+        /* Additional styling for mobile responsiveness */
+        .content {
+            margin: 20px auto; /* Center content on the page */
+            max-width: 600px; /* Max width for larger devices */
+            padding: 15px; /* Padding for inner content */
+        }
+        p {
+        font-size: 14px;
+        line-height: 22px;
+        padding: 0px;
+        margin: 0px;
+        color: #008080;
+    }
+    h1,h2,h3,h4,h5{
+        font-weight: normal;
+    padding: 0px;
+    margin: 0px;
+    color: #008080;
+    }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <nav class="navbar navbar-custom">
+        <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
+            <h3 class="text-center text-md-left mb-0">Patient Feedback Collection</h3>
+            <img src="assets/images/4658943.png" alt="Logo" class="ml-0 ml-md-2 mt-2 mt-md-0">
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container content"> <!-- Added content class for styling -->
+        <div class="row justify-content-center mt-5">
+            <div class="col-12 text-center"> <!-- Use full width on mobile -->
+                <h5>We would love to get your feedback. <br>
+                Please share your feedback with us so that we can make your service experience even better next time.</h5>
+                
+                <!-- Language Selector -->
+                <div class="mt-3">
+                    <label for="language">Language:</label>
+                    <select id="language" class="form-control d-inline-block" style="width:auto;">
+                        <option value="en">English</option>
+                        <option value="ta">தமிழ்</option>
+                        <!-- Add more languages as needed -->
+                    </select>
+                </div>
+
+                <div class="btn-group mt-4 d-flex justify-content-center"> <!-- Center buttons -->
+                    <a href="complaint.php" class="btn btn-outline-primary btn-lg">Complaint</a>
+                    <!-- <a href="feedback.php" class="btn btn-outline-success btn-lg btn-gap">Feedback</a> Added btn-gap class -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

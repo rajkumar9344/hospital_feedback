@@ -1,0 +1,19 @@
+1. npm install -g zcatalyst-cli
+2. catalyst login --> y
+3.catalyst init  --> y
+4. project file selection --> enter
+5. select client and press space then enter 
+6.select any one(angular or react or basic web) then enter
+7.catalyst deploy
+
+
+
+Infinity free hosting
+
+account passwod : l3AIeQxQhoa6u
+
+database configuration:
+
+Current Databases
+MySQL DB Name	               MySQL User Name	    MySQL Password	MySQL Host Name	PHPMyAdmin
+if0_37539443_patient_feedback	if0_37539443	(Your vPanel Password)	sql108.infinityfree.com

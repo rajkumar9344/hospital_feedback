@@ -1,0 +1,95 @@
+
+    /* Style for the custom navbar */
+    .navbar-custom {
+        background-color: #D3D3D3;
+        color: #004d40;
+        padding: 10px 15px;
+        border-bottom: 2px solid #ccc;
+    }
+
+    /* Style for the message */
+    .header-message {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #004d40;
+        margin: 0;
+        flex: 1;
+    }
+
+    /* Style for the logo */
+    .logo {
+        max-height: 100px;
+        max-width: 100px;
+        height: auto;
+        width: auto;
+        margin-left: 10px;
+    }
+
+    /* Mobile view adjustments */
+    @media (max-width: 576px) {
+        .navbar-custom {
+            flex-direction: row;
+        }
+
+        .header-message {
+            font-size: 1.2rem;
+        }
+
+        .logo {
+            max-height: 60px;
+            max-width: 80px;
+        }
+    }
+
+
+
+
+    .btn-gap {
+        margin-left: 10px;
+        /* Gap between buttons */
+    }
+
+    /* Additional styling for mobile responsiveness */
+    .content {
+        margin: 20px auto;
+        max-width: 600px;
+        padding: 15px;
+    }
+
+    p {
+        font-size: 14px;
+        line-height: 22px;
+        padding: 0px;
+        margin: 0px;
+        color: #008080;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5 {
+        font-weight: normal;
+        padding: 0px;
+        margin: 0px;
+        color: #008080;
+    }
+
+    body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+       }
+
+    .footer {
+        margin-top: auto;
+        background-color: #D3D3D3;
+
+        padding: 10px 0;
+    }
+
+    .copyright {
+        margin: 0;
+        /* Remove default margins */
+    }
+    

@@ -1,0 +1,917 @@
+<?php
+// Include PHPMailer classes
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require './PHPMailer-master/src/Exception.php';
+require './PHPMailer-master/src/PHPMailer.php';
+require './PHPMailer-master/src/SMTP.php';
+
+// Database connection settings
+$host = 'localhost'; // or your host
+$db = 'patient_feedback';
+$user = 'root'; // Your database username
+$pass = 'root'; // Your database password
+
+// Create connection
+$conn = new mysqli($host, $user, $pass, $db);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Check if form is submitted
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+   // Fetch form data
+$patientName = $_POST['patientName'];
+$phoneNumber = $_POST['phoneNumber'];
+$op_number = $_POST['op_number'];
+$doctor = $_POST['doctor'];
+$reception_service = $_POST['reception_service'];
+$doctors_communication = $_POST['doctors_communication'];
+$staff_communication = $_POST['staff_communication'];
+$ultrasound = $_POST['ultrasound'];
+$endoscopy = $_POST['endoscopy'];
+$laboratory = $_POST['laboratory'];
+$xray = $_POST['xray'];
+$ecg = $_POST['ecg'];
+$pharmacy = $_POST['pharmacy'];
+$overall_experience = $_POST['overall_experience'];
+$feedbackText=$_POST['feedbackText'];
+// $service_quality = $_POST['service_quality'];
+// $doctors_communication = $_POST['doctors_communication'];
+// $overall_experience = $_POST['overall_experience'];
+$email = $_POST['email'];
+
+// Define doctor's name based on the value
+$doctor_name = '';
+if ($doctor == '1') {
+    $doctor_name = 'Doctor A';
+} else if ($doctor == '2') {
+    $doctor_name = 'Doctor B';
+}
+// send mail with box rating
+
+
+// Function to generate box ratings with different colors and highlight the selected rating
+function generateRatingBox($rating) {
+    // Array of colors for each rating from 1 to 10
+    $colors = [
+        1 => "#FF0000",  // Red
+        2 => "#FF3300",  // Dark Orange
+        3 => "#FF6600",  // Orange
+        4 => "#FF9933",  // Lighter Orange
+        5 => "#FFCC33",  // Yellow Orange
+        6 => "#FFFF66",  // Light Yellow
+        7 => "#CCFF33",  // Light Green
+        8 => "#99CC33",  // Medium Green
+        9 => "#66CC33",  // Green
+        10 => "#33CC33"  // Dark Green
+    ];
+
+    $output = '';
+    for ($i = 10; $i >= 1; $i--) { // Loop from 10 to 1 to reverse the order
+        // Use the predefined color from the array
+        $baseColor = $colors[$i]; // Color for each rating box
+        $highlightColor = "#000000"; // Black for the selected rating box (highlight)
+
+        // If the current box is the selected rating, use the highlight color
+        if ($i == $rating) {
+            $color = $highlightColor;
+            $textColor = "#fff"; // White text for the highlighted box
+        } else {
+            $color = $baseColor;
+            $textColor = "#000"; // Black text for all other boxes
+        }
+
+        // Generate a box with a number inside and the respective color
+        $output .= "<span style='display: inline-block; width: 25px; height: 25px; background-color: $color; margin: 0px; color: $textColor; text-align: center; line-height: 25px; border-radius: 0px;'>$i</span>";
+    }
+    return $output;
+}
+
+// HTML content for email
+$mailBody = "
+<html>
+<head>
+    <style>
+        body {font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; background-color: #f4f4f4;}
+        .container {max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1);}
+        h2 {color: #333;}
+        .form-group {margin-bottom: 5px;}
+        .form-group label {font-weight: bold; display: block; margin-bottom: 5px;}
+        .rating {background: #e7f3fe; padding: 20px; text-align: center; font-size: 15px;}
+        .footer {margin-top: 20px; font-size: 0.9em; color: #555;}
+        .box-rating span {display: inline-block; width: 30px; height: 30px; margin: 2px; border-radius: 5px; text-align: center; line-height: 30px; color: #fff;}
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <h2>Feedback Received</h2>
+        <p>Thank you, <strong>$patientName</strong>, for your feedback!</p>
+        
+        <p>Your responses have been recorded as follows:</p>
+        <p>Your Comment!<br> <strong>$feedbackText</strong></p>
+        <div class='form-group'>
+            <label>Reception Service Rating:</label>
+            <div class='rating box-rating'>" . generateRatingBox($reception_service) . "</div>
+        </div>
+        <div class='form-group'>
+            <label>Doctors Communication Rating:</label>
+            <div class='rating box-rating'>" . generateRatingBox($doctors_communication) . "</div>
+        </div>
+        <div class='form-group'>
+            <label>Staff Communication Rating:</label>
+            <div class='rating box-rating'>" . generateRatingBox($staff_communication) . "</div>
+        </div>
+        <div class='form-group'>
+            <label>Ultrasound  Rating:</label>
+            <div class='rating box-rating'>" . generateRatingBox($ultrasound) . "</div>
+        
+        </div>
+        <div class='form-group'>
+            <label>Endoscopy Rating:</label>
+            <div class='rating box-rating'>" . generateRatingBox($endoscopy) . "</div>
+        </div>
+        <div class='form-group'>
+            <label>Laboratory Rating:</label>
+            <div class='rating box-rating'>" . generateRatingBox($laboratory) . "</div>
+        </div>
+        <div class='form-group'>
+            <label>Xray Rating:</label>
+            <div class='rating box-rating'>" . generateRatingBox($xray) . "</div>
+        </div>
+        <div class='form-group'>
+            <label>Ecg Rating:</label>
+            <div class='rating box-rating'>" . generateRatingBox($ecg) . "</div>
+        </div>
+        <div class='form-group'>
+            <label>Pharmacy Rating:</label>
+            <div class='rating box-rating'>" . generateRatingBox($pharmacy) . "</div>
+        </div>
+        <div class='form-group'>
+            <label>Overall Experience Rating:</label>
+            <div class='rating box-rating'>" . generateRatingBox($overall_experience) . "</div>
+        </div>
+        <p class='footer'>If you have any further questions, feel free to reach out!</p>
+    </div>
+</body>
+</html>";
+// Function to generate box ratings instead of stars
+
+// SQL query to insert data into the feedback table
+    // Prepare an SQL statement
+    $stmt = $conn->prepare("INSERT INTO feedback (patient_name, phone_number, op_number, doctor,email, reception_service, doctors_communication, staff_communication, ultrasound, endoscopy, laboratory, xray, ecg, pharmacy, overall_experience) VALUES (?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    
+    // Bind parameters to the SQL query
+    $stmt->bind_param("sssssiiiiiiiiii", $patientName, $phoneNumber, $op_number, $doctor,$email, $reception_service, $doctors_communication, $staff_communication, $ultrasound, $endoscopy, $laboratory, $xray, $ecg, $pharmacy, $overall_experience);
+
+    if ($stmt->execute()) {
+        // Prepare email
+        $mail = new PHPMailer(true);
+        try {
+            //Server settings
+            $mail->isSMTP(); // Set mailer to use SMTP
+            $mail->Host = 'smtp.gmail.com'; // Specify your SMTP server
+            $mail->SMTPAuth = true; // Enable SMTP authentication
+            $mail->Username = 'rajkumarnkl2024@gmail.com'; // SMTP username
+            $mail->Password = 'dwjq gfox rdeu wcfp'; // SMTP password
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; // Enable TLS encryption
+            $mail->Port = 587; // TCP port to connect to
+
+            // Recipients
+            $mail->setFrom('rajkumarnkl2024@gmail.com', 'Hospital Feedback'); // Sender's email and name
+            $mail->addAddress($email, $patientName); // Add recipient (the patient)
+            // $mail->addReplyTo('rajkumarnkl2024@gmail.com', 'No Reply'); // Add a reply-to address
+
+            // Content
+            $mail->isHTML(true); // Set email format to HTML
+            $mail->Subject = 'Thank you for your Feedback!';
+            $mail->Body    = $mailBody;
+
+            // Send email
+            $mail->send();
+            echo "<script>alert('Feedback submitted successfully! A confirmation email has been sent.'); window.location.href='feedback_home.php';</script>";
+        } catch (Exception $e) {
+            echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+        }
+    } else {
+        echo "Error: " . $sql . "<br>" . $conn->error;
+    }
+}
+
+$conn->close();
+?>
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Feedback System</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+    .navbar-custom {
+        background-color: #D3D3D3;
+        /* Light Gray background */
+        color: #004d40;
+        /* Darker text for contrast */
+        padding: 10px 15px;
+        /* Padding around the header */
+        border-bottom: 2px solid #ccc;
+        /* Optional border for visual separation */
+    }
+
+    /* Style for the message */
+    .header-message {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #004d40;
+        /* Dark text */
+        margin: 0;
+        flex: 1;
+        /* Allow the message to take up available space */
+    }
+
+    /* Style for the logo */
+    .logo {
+        max-height: 80px;
+        /* Adjust height */
+        max-width: 100px;
+        /* Adjust width */
+        height: auto;
+        width: auto;
+        margin-left: 10px;
+        /* Space between the message and logo */
+    }
+
+    /* Mobile view adjustments */
+    @media (max-width: 576px) {
+        .navbar-custom {
+            flex-direction: row;
+            /* Ensure message and logo remain side by side */
+        }
+
+        .header-message {
+            font-size: 1.2rem;
+            /* Slightly smaller text for mobile screens */
+        }
+
+        .logo {
+            max-height: 60px;
+            /* Smaller logo for mobile */
+            max-width: 80px;
+        }
+    }
+
+
+    .content {
+        margin: 20px auto;
+        /* Center content on the page */
+        padding: 15px;
+        /* Padding for inner content */
+    }
+
+    /* Styles for rating */
+    .rating-container {
+        margin-bottom: 10px;
+        /* Space between rating sections */
+        padding: 10px;
+        border-radius: 0px;
+        background-color: #f8f9fa;
+        border: 1px solid blue;
+        /* Blue border */
+    }
+
+    .rating-scale {
+        display: flex;
+        /* justify-content: space-between;  */
+        flex-wrap: nowrap;
+        /* Prevent wrapping */
+        margin-bottom: 5px;
+    }
+
+    .rating-scale input {
+        display: none;
+        /* Hide radio buttons */
+    }
+
+    .rating-scale label {
+        flex: 1;
+        /* Allow labels to grow */
+        padding: 10px;
+        text-align: center;
+        background-color: #ccc;
+        color: white;
+        cursor: pointer;
+        margin: 0 0px;
+        /* Space between labels */
+        /* border-radius: 5px;  */
+    }
+
+    /* Color coding for ratings */
+    .rating-scale label[data-value="10"] {
+        background-color: #2e7d32;
+    }
+
+    .rating-scale label[data-value="9"] {
+        background-color: #388e3c;
+    }
+
+    .rating-scale label[data-value="8"] {
+        background-color: #43a047;
+    }
+
+    .rating-scale label[data-value="7"] {
+        background-color: #689f38;
+    }
+
+    .rating-scale label[data-value="6"] {
+        background-color: #afb42b;
+    }
+
+    .rating-scale label[data-value="5"] {
+        background-color: #fbc02d;
+    }
+
+    .rating-scale label[data-value="4"] {
+        background-color: #f57c00;
+    }
+
+    .rating-scale label[data-value="3"] {
+        background-color: #e64a19;
+    }
+
+    .rating-scale label[data-value="2"] {
+        background-color: #d32f2f;
+    }
+
+    .rating-scale label[data-value="1"] {
+        background-color: #c62828;
+    }
+
+    .rating-scale input:checked+label {
+        border: 2px solid black;
+        /* Highlight selected rating */
+    }
+
+    #para1 {
+        font-size: 14px;
+        line-height: 22px;
+        padding: 0px;
+        margin: 0px;
+        color: #008080;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5 {
+        font-weight: normal;
+        padding: 0px;
+        margin: 0px;
+        color: #008080;
+    }
+
+    body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        /* Ensures the footer is always at the bottom */
+    }
+
+
+    .footer {
+        margin-top: auto;
+        /* Pushes the footer to the bottom */
+        background-color: #D3D3D3;
+        /* Classic Gray */
+
+        /* Optional: background color for the footer */
+        padding: 10px 0;
+        /* Optional: padding for spacing */
+    }
+
+    .copyright {
+        margin: 0;
+        /* Remove default margins */
+    }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header Section -->
+    <nav class="navbar navbar-custom">
+        <div class="container d-flex justify-content-between align-items-center">
+            <h3 class="header-message">Patient Feedback Collection</h3>
+            <img src="feedback_image1.jpeg" alt="Logo" class="logo img-fluid">
+        </div>
+    </nav>
+    <!-- Main Content -->
+    <div class="container content">
+        <div class="row justify-content-center mt-2">
+            <div class="col-12 text-center">
+                <h5 id="feedbackText">We would love to get your feedback. <br>
+                    Please share your feedback with us so that we can make your service experience even better next
+                    time.</h5>
+
+                <!-- Complaint Form -->
+                <form class="mt-4" action="feedback.php" method="POST" id="feedbackForm">
+                    <div class="form-row">
+                        <div class="form-group col-sm-6">
+                            <input type="text" class="form-control" id="patientName" name="patientName"
+                                placeholder="Patient Name*" required>
+                        </div>
+                        <div class="form-group col-sm-6">
+                            <input type="text" class="form-control" id="phoneNumber" name="phoneNumber"
+                                placeholder="Phone Number*" required>
+                        </div>
+
+                        <div class="form-group col-sm-3">
+                            <input type="email" class="form-control" id="email" name="email" placeholder="Email*"
+                                required>
+                        </div>
+
+                        <div class="form-group col-sm-3">
+                            <input type="text" class="form-control" id="op_number" name="op_number"
+                                placeholder="OP Number" required>
+                        </div>
+                        <div class="form-group col-sm-3">
+                            <select class="form-control" id="doctor" name="doctor">
+                                <option value="">Doctor</option>
+                                <option value="1">Doctor A</option>
+                                <option value="2">Doctor B</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-sm-12 text-color:#008080">
+                        <p id="para1">Please give your feedback on the website by clicking on the appropriate numbers
+                            and
+                            also type
+                            a few sentences if you have got any feedback or complaints. Your feedback will make our
+                            customer service experience even better next time.</p>
+                    </div>
+
+                    <!-- Ratings Section -->
+                    <div class="container">
+                        <!-- Reception Service Rating -->
+                        <div class="rating-container mt-2">
+                            <h5 class="text-left" id="r_c">Reception Service Rating</h5>
+                            <div class="rating-scale">
+                                <input type="radio" id="reception10" name="reception_service" value="10" required>
+                                <label for="reception10" data-value="10">10</label>
+                                <input type="radio" id="reception9" name="reception_service" value="9">
+                                <label for="reception9" data-value="9">9</label>
+                                <input type="radio" id="reception8" name="reception_service" value="8">
+                                <label for="reception8" data-value="8">8</label>
+                                <input type="radio" id="reception7" name="reception_service" value="7">
+                                <label for="reception7" data-value="7">7</label>
+                                <input type="radio" id="reception6" name="reception_service" value="6">
+                                <label for="reception6" data-value="6">6</label>
+                                <input type="radio" id="reception5" name="reception_service" value="5">
+                                <label for="reception5" data-value="5">5</label>
+                                <input type="radio" id="reception4" name="reception_service" value="4">
+                                <label for="reception4" data-value="4">4</label>
+                                <input type="radio" id="reception3" name="reception_service" value="3">
+                                <label for="reception3" data-value="3">3</label>
+                                <input type="radio" id="reception2" name="reception_service" value="2">
+                                <label for="reception2" data-value="2">2</label>
+                                <input type="radio" id="reception1" name="reception_service" value="1">
+                                <label for="reception1" data-value="1">1</label>
+                            </div>
+                            <div class="d-flex justify-content-between mt-2">
+                                <span class="text-success" id="good1">Good</span>
+                                <span class="text-danger" id="bad1">Bad</span>
+                            </div>
+                        </div>
+
+
+                        <!-- Doctors Communication Rating -->
+                        <div class="rating-container mt-2  ">
+                            <h5 class="text-left" id="d_c">Doctors Communication Rating</h5>
+                            <div class="rating-scale">
+                                <input type="radio" id="doctors10" name="doctors_communication" value="10" required>
+                                <label for="doctors10" data-value="10">10</label>
+                                <input type="radio" id="doctors9" name="doctors_communication" value="9">
+                                <label for="doctors9" data-value="9">9</label>
+                                <input type="radio" id="doctors8" name="doctors_communication" value="8">
+                                <label for="doctors8" data-value="8">8</label>
+                                <input type="radio" id="doctors7" name="doctors_communication" value="7">
+                                <label for="doctors7" data-value="7">7</label>
+                                <input type="radio" id="doctors6" name="doctors_communication" value="6">
+                                <label for="doctors6" data-value="6">6</label>
+                                <input type="radio" id="doctors5" name="doctors_communication" value="5">
+                                <label for="doctors5" data-value="5">5</label>
+                                <input type="radio" id="doctors4" name="doctors_communication" value="4">
+                                <label for="doctors4" data-value="4">4</label>
+                                <input type="radio" id="doctors3" name="doctors_communication" value="3">
+                                <label for="doctors3" data-value="3">3</label>
+                                <input type="radio" id="doctors2" name="doctors_communication" value="2">
+                                <label for="doctors2" data-value="2">2</label>
+                                <input type="radio" id="doctors1" name="doctors_communication" value="1">
+                                <label for="doctors1" data-value="1">1</label>
+                            </div>
+                            <div class="d-flex justify-content-between mt-2">
+                                <span class="text-success" id="good2">Good</span>
+                                <span class="text-danger" id="bad2">Bad</span>
+                            </div>
+                        </div>
+
+
+                        <!-- Staff Communication Rating -->
+                        <div class="rating-container mt-2 ">
+                            <h5 class="text-left" id="s_c">Staff Communication Rating</h5>
+                            <div class="rating-scale">
+                                <input type="radio" id="staff10" name="staff_communication" value="10" required>
+                                <label for="staff10" data-value="10">10</label>
+                                <input type="radio" id="staff9" name="staff_communication" value="9">
+                                <label for="staff9" data-value="9">9</label>
+                                <input type="radio" id="staff8" name="staff_communication" value="8">
+                                <label for="staff8" data-value="8">8</label>
+                                <input type="radio" id="staff7" name="staff_communication" value="7">
+                                <label for="staff7" data-value="7">7</label>
+                                <input type="radio" id="staff6" name="staff_communication" value="6">
+                                <label for="staff6" data-value="6">6</label>
+                                <input type="radio" id="staff5" name="staff_communication" value="5">
+                                <label for="staff5" data-value="5">5</label>
+                                <input type="radio" id="staff4" name="staff_communication" value="4">
+                                <label for="staff4" data-value="4">4</label>
+                                <input type="radio" id="staff3" name="staff_communication" value="3">
+                                <label for="staff3" data-value="3">3</label>
+                                <input type="radio" id="staff2" name="staff_communication" value="2">
+                                <label for="staff2" data-value="2">2</label>
+                                <input type="radio" id="staff1" name="staff_communication" value="1">
+                                <label for="staff1" data-value="1">1</label>
+                            </div>
+                            <div class="d-flex justify-content-between mt-2">
+                                <span class="text-success" id="good3">Good</span>
+                                <span class="text-danger" id="bad3">Bad</span>
+                            </div>
+                        </div>
+
+                        <!-- Ultrasound Rating -->
+                        <div class="rating-container mt-2 ">
+                            <h5 class="text-left" id="u_r">Ultrasound Rating</h5>
+                            <div class="rating-scale">
+                                <input type="radio" id="ultrasound10" name="ultrasound" value="10" required>
+                                <label for="ultrasound10" data-value="10">10</label>
+                                <input type="radio" id="ultrasound9" name="ultrasound" value="9">
+                                <label for="ultrasound9" data-value="9">9</label>
+                                <input type="radio" id="ultrasound8" name="ultrasound" value="8">
+                                <label for="ultrasound8" data-value="8">8</label>
+                                <input type="radio" id="ultrasound7" name="ultrasound" value="7">
+                                <label for="ultrasound7" data-value="7">7</label>
+                                <input type="radio" id="ultrasound6" name="ultrasound" value="6">
+                                <label for="ultrasound6" data-value="6">6</label>
+                                <input type="radio" id="ultrasound5" name="ultrasound" value="5">
+                                <label for="ultrasound5" data-value="5">5</label>
+                                <input type="radio" id="ultrasound4" name="ultrasound" value="4">
+                                <label for="ultrasound4" data-value="4">4</label>
+                                <input type="radio" id="ultrasound3" name="ultrasound" value="3">
+                                <label for="ultrasound3" data-value="3">3</label>
+                                <input type="radio" id="ultrasound2" name="ultrasound" value="2">
+                                <label for="ultrasound2" data-value="2">2</label>
+                                <input type="radio" id="ultrasound1" name="ultrasound" value="1">
+                                <label for="ultrasound1" data-value="1">1</label>
+                            </div>
+                            <div class="d-flex justify-content-between mt-2">
+                                <span class="text-success" id="good4">Good</span>
+                                <span class="text-danger" id="bad4">Bad</span>
+                            </div>
+                        </div>
+
+                        <!-- Endoscopy Rating -->
+                        <div class="rating-container mt-2">
+                            <h5 class="text-left" id="e_r">Endoscopy Rating</h5>
+                            <div class="rating-scale">
+                                <input type="radio" id="endoscopy10" name="endoscopy" value="10" required>
+                                <label for="endoscopy10" data-value="10">10</label>
+                                <input type="radio" id="endoscopy9" name="endoscopy" value="9">
+                                <label for="endoscopy9" data-value="9">9</label>
+                                <input type="radio" id="endoscopy8" name="endoscopy" value="8">
+                                <label for="endoscopy8" data-value="8">8</label>
+                                <input type="radio" id="endoscopy7" name="endoscopy" value="7">
+                                <label for="endoscopy7" data-value="7">7</label>
+                                <input type="radio" id="endoscopy6" name="endoscopy" value="6">
+                                <label for="endoscopy6" data-value="6">6</label>
+                                <input type="radio" id="endoscopy5" name="endoscopy" value="5">
+                                <label for="endoscopy5" data-value="5">5</label>
+                                <input type="radio" id="endoscopy4" name="endoscopy" value="4">
+                                <label for="endoscopy4" data-value="4">4</label>
+                                <input type="radio" id="endoscopy3" name="endoscopy" value="3">
+                                <label for="endoscopy3" data-value="3">3</label>
+                                <input type="radio" id="endoscopy2" name="endoscopy" value="2">
+                                <label for="endoscopy2" data-value="2">2</label>
+                                <input type="radio" id="endoscopy1" name="endoscopy" value="1">
+                                <label for="endoscopy1" data-value="1">1</label>
+                            </div>
+                            <div class="d-flex justify-content-between mt-2">
+                                <span class="text-success" id="good5">Good</span>
+                                <span class="text-danger" id="bad5">Bad</span>
+                            </div>
+                        </div>
+
+                        <!-- Laboratory Rating -->
+                        <div class="rating-container mt-2">
+                            <h5 class="text-left" id="l_r">Laboratory Rating</h5>
+                            <div class="rating-scale">
+                                <input type="radio" id="laboratory10" name="laboratory" value="10" required>
+                                <label for="laboratory10" data-value="10">10</label>
+                                <input type="radio" id="laboratory9" name="laboratory" value="9">
+                                <label for="laboratory9" data-value="9">9</label>
+                                <input type="radio" id="laboratory8" name="laboratory" value="8">
+                                <label for="laboratory8" data-value="8">8</label>
+                                <input type="radio" id="laboratory7" name="laboratory" value="7">
+                                <label for="laboratory7" data-value="7">7</label>
+                                <input type="radio" id="laboratory6" name="laboratory" value="6">
+                                <label for="laboratory6" data-value="6">6</label>
+                                <input type="radio" id="laboratory5" name="laboratory" value="5">
+                                <label for="laboratory5" data-value="5">5</label>
+                                <input type="radio" id="laboratory4" name="laboratory" value="4">
+                                <label for="laboratory4" data-value="4">4</label>
+                                <input type="radio" id="laboratory3" name="laboratory" value="3">
+                                <label for="laboratory3" data-value="3">3</label>
+                                <input type="radio" id="laboratory2" name="laboratory" value="2">
+                                <label for="laboratory2" data-value="2">2</label>
+                                <input type="radio" id="laboratory1" name="laboratory" value="1">
+                                <label for="laboratory1" data-value="1">1</label>
+                            </div>
+                            <div class="d-flex justify-content-between mt-2">
+                                <span class="text-success" id="good6">Good</span>
+                                <span class="text-danger" id="bad6">Bad</span>
+                            </div>
+                        </div>
+
+                        <!-- X-Ray Rating -->
+                        <div class="rating-container mt-2">
+                            <h5 class="text-left" id="x_r">X-Ray Rating</h5>
+                            <div class="rating-scale">
+                                <input type="radio" id="xray10" name="xray" value="10" required>
+                                <label for="xray10" data-value="10">10</label>
+                                <input type="radio" id="xray9" name="xray" value="9">
+                                <label for="xray9" data-value="9">9</label>
+                                <input type="radio" id="xray8" name="xray" value="8">
+                                <label for="xray8" data-value="8">8</label>
+                                <input type="radio" id="xray7" name="xray" value="7">
+                                <label for="xray7" data-value="7">7</label>
+                                <input type="radio" id="xray6" name="xray" value="6">
+                                <label for="xray6" data-value="6">6</label>
+                                <input type="radio" id="xray5" name="xray" value="5">
+                                <label for="xray5" data-value="5">5</label>
+                                <input type="radio" id="xray4" name="xray" value="4">
+                                <label for="xray4" data-value="4">4</label>
+                                <input type="radio" id="xray3" name="xray" value="3">
+                                <label for="xray3" data-value="3">3</label>
+                                <input type="radio" id="xray2" name="xray" value="2">
+                                <label for="xray2" data-value="2">2</label>
+                                <input type="radio" id="xray1" name="xray" value="1">
+                                <label for="xray1" data-value="1">1</label>
+                            </div>
+                            <div class="d-flex justify-content-between mt-2">
+                                <span class="text-success" id="good7">Good</span>
+                                <span class="text-danger" id="bad7">Bad</span>
+                            </div>
+                        </div>
+
+                        <!-- ECG Rating -->
+                        <div class="rating-container mt-2">
+                            <h5 class="text-left" id="ecg_r">ECG Rating</h5>
+                            <div class="rating-scale">
+                                <input type="radio" id="ecg10" name="ecg" value="10" required>
+                                <label for="ecg10" data-value="10">10</label>
+                                <input type="radio" id="ecg9" name="ecg" value="9">
+                                <label for="ecg9" data-value="9">9</label>
+                                <input type="radio" id="ecg8" name="ecg" value="8">
+                                <label for="ecg8" data-value="8">8</label>
+                                <input type="radio" id="ecg7" name="ecg" value="7">
+                                <label for="ecg7" data-value="7">7</label>
+                                <input type="radio" id="ecg6" name="ecg" value="6">
+                                <label for="ecg6" data-value="6">6</label>
+                                <input type="radio" id="ecg5" name="ecg" value="5">
+                                <label for="ecg5" data-value="5">5</label>
+                                <input type="radio" id="ecg4" name="ecg" value="4">
+                                <label for="ecg4" data-value="4">4</label>
+                                <input type="radio" id="ecg3" name="ecg" value="3">
+                                <label for="ecg3" data-value="3">3</label>
+                                <input type="radio" id="ecg2" name="ecg" value="2">
+                                <label for="ecg2" data-value="2">2</label>
+                                <input type="radio" id="ecg1" name="ecg" value="1">
+                                <label for="ecg1" data-value="1">1</label>
+                            </div>
+                            <div class="d-flex justify-content-between mt-2">
+                                <span class="text-success" id="good8">Good</span>
+                                <span class="text-danger" id="bad8">Bad</span>
+                            </div>
+                        </div>
+
+                        <!-- Pharmacy Rating -->
+                        <div class="rating-container mt-2">
+                            <h5 class="text-left" id="ph_r">Pharmacy Rating</h5>
+                            <div class="rating-scale">
+                                <input type="radio" id="pharmacy10" name="pharmacy" value="10" required>
+                                <label for="pharmacy10" data-value="10">10</label>
+                                <input type="radio" id="pharmacy9" name="pharmacy" value="9">
+                                <label for="pharmacy9" data-value="9">9</label>
+                                <input type="radio" id="pharmacy8" name="pharmacy" value="8">
+                                <label for="pharmacy8" data-value="8">8</label>
+                                <input type="radio" id="pharmacy7" name="pharmacy" value="7">
+                                <label for="pharmacy7" data-value="7">7</label>
+                                <input type="radio" id="pharmacy6" name="pharmacy" value="6">
+                                <label for="pharmacy6" data-value="6">6</label>
+                                <input type="radio" id="pharmacy5" name="pharmacy" value="5">
+                                <label for="pharmacy5" data-value="5">5</label>
+                                <input type="radio" id="pharmacy4" name="pharmacy" value="4">
+                                <label for="pharmacy4" data-value="4">4</label>
+                                <input type="radio" id="pharmacy3" name="pharmacy" value="3">
+                                <label for="pharmacy3" data-value="3">3</label>
+                                <input type="radio" id="pharmacy2" name="pharmacy" value="2">
+                                <label for="pharmacy2" data-value="2">2</label>
+                                <input type="radio" id="pharmacy1" name="pharmacy" value="1">
+                                <label for="pharmacy1" data-value="1">1</label>
+                            </div>
+                            <div class="d-flex justify-content-between mt-2">
+                                <span class="text-success" id="good9">Good</span>
+                                <span class="text-danger" id="bad9">Bad</span>
+                            </div>
+                        </div>
+
+                        <!-- Overall Experience Rating -->
+                        <div class="rating-container mt-2">
+                            <h5 class="text-left" id="o_e_r">Overall Experience Rating</h5>
+                            <div class="rating-scale">
+                                <input type="radio" id="overall10" name="overall_experience" value="10" required>
+                                <label for="overall10" data-value="10">10</label>
+                                <input type="radio" id="overall9" name="overall_experience" value="9">
+                                <label for="overall9" data-value="9">9</label>
+                                <input type="radio" id="overall8" name="overall_experience" value="8">
+                                <label for="overall8" data-value="8">8</label>
+                                <input type="radio" id="overall7" name="overall_experience" value="7">
+                                <label for="overall7" data-value="7">7</label>
+                                <input type="radio" id="overall6" name="overall_experience" value="6">
+                                <label for="overall6" data-value="6">6</label>
+                                <input type="radio" id="overall5" name="overall_experience" value="5">
+                                <label for="overall5" data-value="5">5</label>
+                                <input type="radio" id="overall4" name="overall_experience" value="4">
+                                <label for="overall4" data-value="4">4</label>
+                                <input type="radio" id="overall3" name="overall_experience" value="3">
+                                <label for="overall3" data-value="3">3</label>
+                                <input type="radio" id="overall2" name="overall_experience" value="2">
+                                <label for="overall2" data-value="2">2</label>
+                                <input type="radio" id="overall1" name="overall_experience" value="1">
+                                <label for="overall1" data-value="1">1</label>
+                            </div>
+                            <div class="d-flex justify-content-between mt-2">
+                                <span class="text-success" id="good10">Good</span>
+                                <span class="text-danger" id="bad10">Bad</span>
+                            </div>
+                        </div>
+
+                
+                <div class="form-group">
+                    <textarea class="form-control" id="feedbackText" name="feedbackText" rows="2" placeholder="Comment"
+                        required></textarea>
+                </div>
+
+
+
+
+
+
+
+                <button type="submit" class="btn btn-danger btn-lg btn-block" id="s_button">Submit Feedback</button>
+                </form>
+
+                <!-- Back Button at the bottom -->
+                <a href="feedback_home.php" class="btn btn-secondary mt-3" id="back">Back</a>
+                <!-- Adjust the href to your home page -->
+            </div>
+        </div>
+    </div>
+</div>
+    <div class="footer">
+        <p class="copyright mb-0 text-center">
+            Copyright © 2024 <a href="https://redmindtechnologies.com" target="_blank">RedMind Technologies</a>. All
+            Rights Reserved.
+        </p>
+    </div>
+
+
+
+    <script>
+    // On page load, check the selected language
+    window.onload = function() {
+        var savedLanguage = localStorage.getItem('selectedLanguage');
+        if (savedLanguage) {
+            updateComplaintPageLanguage(savedLanguage);
+        }
+    };
+
+    // Update complaint page content based on language
+    function updateComplaintPageLanguage(language) {
+        var patientName = document.getElementById('patientName');
+        var phoneNumber = document.getElementById('phoneNumber');
+        var mail = document.getElementById('email');
+        var complaintText = document.getElementById('complaintText');
+        var feedbackText = document.getElementById('feedbackText');
+        var s_complaint = document.getElementById('s_complaint');
+        var back = document.getElementById('back');
+        var op_number = document.getElementById('op_number');
+        var doctorSelect = document.getElementById('doctor');
+        var s_button = document.getElementById('s_button');
+        var r_c = document.getElementById('r_c');
+        var goodLabels = document.querySelectorAll("[id^='good']");
+        var badLabels = document.querySelectorAll("[id^='bad']");
+        var bad = document.getElementById('p');
+
+        var d_c = document.getElementById('d_c');
+        var s_c = document.getElementById('s_c');
+        var u_r = document.getElementById('u_r');
+        var e_r = document.getElementById('e_r');
+        var l_r = document.getElementById('l_r');
+        var x_r = document.getElementById('x_r');
+        var ecg_r = document.getElementById('ecg_r');
+        var ph_r = document.getElementById('ph_r');
+        var o_e_r = document.getElementById('o_e_r');
+
+
+
+
+
+        if (language === 'ta') {
+            feedbackText.innerHTML =
+                'நாங்கள் உங்கள் கருத்துக்களை வரவேற்கிறோம். உங்கள் கருத்துகளை எங்களுடன் பகிர்ந்து கொள்ளுங்கள், அது உங்கள் அடுத்த அனுபவத்தை மேலும் சிறப்பாக மாற்ற உதவும்.';
+
+            patientName.placeholder = 'நோயாளியின் பெயர்*';
+            phoneNumber.placeholder = 'தொலைபேசி எண்*';
+            mail.placeholder = 'மின்னஞ்சல்*';
+            op_number.placeholder = 'வெளி நோயாளி எண்';
+            s_button.innerHTML = 'கருத்தினை அனுப்பவும்';
+            r_c.innerHTML = 'வரவேற்பு சேவை';
+            d_c.innerHTML = 'டாக்டர்கள் தொடர்பு';
+            s_c.innerHTML = 'பணியாளர் தொடர்பு';
+            u_r.innerHTML = 'அல்ட்ராசவுண்ட்';
+            e_r.innerHTML = 'எண்டோஸ்கோபி';
+            l_r.innerHTML = 'ஆய்வகம்';
+            x_r.innerHTML = 'எக்ஸ்-ரே';
+            ecg_r.innerHTML = 'ஈசிஜி';
+            ph_r.innerHTML = 'மருந்தகம்';
+            o_e_r.innerHTML = 'ஒட்டுமொத்த அனுபவம்';
+
+            // Update all "Good" and "Bad" labels to Tamil
+            goodLabels.forEach(function(label) {
+                label.innerHTML = 'நல்ல';
+            });
+            badLabels.forEach(function(label) {
+                label.innerHTML = 'மோசமான';
+            });
+
+
+            p.innerHTML =
+                'பொருத்தமான எண்களைக் கிளிக் செய்வதன் மூலம் உங்கள் கருத்தைத் தெரிவிக்கவும், மேலும் ஏதேனும் கருத்து அல்லது புகார்கள் இருந்தால், சில வாக்கியங்களையும் தட்டச்சு செய்யவும். உங்கள் கருத்து, எங்கள் வாடிக்கையாளர் சேவை அனுபவத்தை அடுத்த முறை இன்னும் சிறப்பாகச் செய்யும்.';
+
+
+
+            back.innerHTML = 'முந்தைய பக்கம்';
+            doctorSelect.innerHTML = `
+                <option value="">மருத்துவர்</option>
+                <option value="1">மருத்துவர் A</option>
+                <option value="2">மருத்துவர் B</option>
+            `;
+        } else {
+            feedbackText.innerHTML =
+                'We would love to get your feedback. Please share your feedback with us so that we can make your service experience even better next time.';
+
+            patientName.placeholder = 'Patient Name*';
+            phoneNumber.placeholder = 'Phone Number*';
+            mail.placeholder = 'Email*';
+            complaintText.placeholder = 'Your Complaint*';
+            s_complaint.innerHTML = 'Submit Complaint';
+
+            doctorSelect.innerHTML = `
+                <option value="">Doctor</option>
+                <option value="1">Doctor A</option>
+                <option value="2">Doctor B</option>
+            `;
+
+        }
+    }
+    </script>
+
+
+
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+
+</html>
